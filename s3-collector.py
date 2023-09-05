@@ -23,11 +23,11 @@ cases = {
 
 print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
 
-for i in buckets:
+for sub in buckets:
 
 
-    for x in cases:
-        url = "https://" + i + x
+    for region in cases:
+        url = "https://" + sub + region
         try:
 
             response = requests.get(url)
