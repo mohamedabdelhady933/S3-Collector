@@ -1,23 +1,9 @@
 import requests
-import sys
 from colorama import Fore
 import threading
+import argparse
 
-if len(sys.argv) == 1 or len(sys.argv) == 2:
-    print("Usage : "+sys.argv[0]+" subdomains.txt bucket_names.txt")
-else:
-
-    subs = open(sys.argv[1],'r')
-
-    subdomains = subs.read().splitlines()
-
-
-    bucket = open(sys.argv[2],'r')
-
-
-    buckets = bucket.read().splitlines()
-
-    cases = {
+cases = {
             ".s3.amazonaws.com",
             ".s3.us-east-1.amazonaws.com",
             ".s3.us-east-2.amazonaws.com",
@@ -186,13 +172,47 @@ else:
             "s3.us-gov-west-1.amazonaws.com"
     }
 
-    print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
+parser = argparse.ArgumentParser(description="Enumerate S3 Buckets Names for Company")
 
-    def sub_N_regions():
-        for sub in subdomains:
+parser.add_argument("-sf", "--subs-file", required=False, help="Subdomains File to enumerate")
+parser.add_argument("-c", "--company", required=False, help="Company Name")
+parser.add_argument("-bn", "--bucket-names", required=False, help="Buckets Name wordlist")
+args = parser.parse_args()
 
-            for region in cases:
-                url = "https://" + sub + region
+
+
+
+
+
+
+
+
+
+# Subdomain And Region
+def sub_N_regions(subdomains):
+    for sub in subdomains:
+
+        for region in cases:
+            url = "https://" + sub + region
+            try:
+
+                response = requests.get(url)
+                if "NoSuchBucket" in response.text:
+                    print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+                else:
+                    print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
+            except:
+                print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+
+
+
+def sub_N_names_N_regions(subdomains , buckets):
+    for sub in subdomains:
+
+        for region in cases:
+
+            for buck in buckets:
+                url = "https://" + sub + buck + region
                 try:
 
                     response = requests.get(url)
@@ -204,33 +224,69 @@ else:
                     print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
                 
 
-    def sub_N_names_N_regions():
-        for sub in subdomains:
-
-            for region in cases:
-
-                for buck in buckets:
-                    url = "https://" + sub + buck + region
-                    try:
-
-                        response = requests.get(url)
-                        if "NoSuchBucket" in response.text:
-                            print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
-                        else:
-                            print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
-                    except:
-                        print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
-                
+def company_N_regions(company):
+    for region in cases:
+            url = "https://" + company + region
+            try:
+                response = requests.get(url)
+                if "NoSuchBucket" in response.text:
+                    print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+                else:
+                    print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
+            except:
+                print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+        
 
 
+def company_N_bucket_N_regions(company , buckets):
+    for region in cases:
+        for buck in buckets:
+            url = "https://" + company + buck + region
+            try:
+                response = requests.get(url)
+                if "NoSuchBucket" in response.text:
+                    print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+                else:
+                    print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
+            except:
+                print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
 
-    thread1 = threading.Thread(target=sub_N_regions)
-    thread2 = threading.Thread(target=sub_N_names_N_regions)
+# ----------------------------------------------------------------------------
 
-    thread1.start()
-    thread2.start()
 
-    thread1.join()
-    thread2.join()
 
+if args.subs_file == None and args.company == None and args.bucket_names == None:
+    parser.print_help()
+
+
+if args.company:
+    print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
+    company = args.company
+    company_N_regions(company)
     print("-"*50 +"\n Finished\n")
+
+if args.subs_file:
+    print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
+    subs = open(args.file,'r')
+    subdomains = subs.read().splitlines()
+    sub_N_regions(subdomains)
+    print("-"*50 +"\n Finished\n")
+
+if args.company and args.bucket_names:
+    print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
+    company = args.company
+    bucket = open(args.bucket_names,'r')
+    buckets = bucket.read().splitlines()
+    company_N_bucket_N_regions(company , buckets)
+    print("-"*50 +"\n Finished\n")
+
+if args.subs_file and args.bucket_names:
+    print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
+    subs = open(args.file,'r')
+    subdomains = subs.read().splitlines()
+    bucket = open(args.bucket_names,'r')
+    buckets = bucket.read().splitlines()
+    sub_N_names_N_regions(subdomains , buckets)
+    print("-"*50 +"\n Finished\n")
+
+
