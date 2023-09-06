@@ -1,12 +1,19 @@
 import requests
 import sys
 from colorama import Fore
+import threading
+
+# if len(sys.argv) == 1:
+    # print("Usage : "+sys.argv[0]+" subdomains.txt bucket_names.txt")
+subs = open(sys.argv[1],'r')
+
+subdomains = subs.read().splitlines()
 
 
-file = open(sys.argv[1],'r')
+bucket = open(sys.argv[2],'r')
 
-buckets = file.read().splitlines()
 
+buckets = bucket.read().splitlines()
 
 cases = {
         ".s3.amazonaws.com",
@@ -23,7 +30,7 @@ cases = {
         ".s3.dualstack.us-east-2.amazonaws.com",
         ".s3-fips.dualstack.us-east-2.amazonaws.com",
         ".s3-website-eu-west-1.amazonaws.com",
-        
+
         "s3-accesspoint-fips.ca-central-1.amazonaws.com",
         "s3-accesspoint-fips.dualstack.ca-central-1.amazonaws.com",
         "s3-accesspoint-fips.dualstack.us-east-1.amazonaws.com", 
@@ -179,14 +186,43 @@ cases = {
 
 print(Fore.GREEN, "\n[+] Start Enumerate Buckets \n")
 
-for sub in buckets:
+def sub_N_regions():
+    for sub in subdomains:
+
+        for region in cases:
+            url = "https://" + sub + region
+            try:
+
+                response = requests.get(url)
+                print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
+            except:
+                print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+            
+
+def sub_N_names_N_regions():
+    for sub in subdomains:
+
+        for region in cases:
+
+            for buck in buckets:
+                url = "https://" + sub + buck + region
+                try:
+
+                    response = requests.get(url)
+                    print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
+                except:
+                    print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+            
 
 
-    for region in cases:
-        url = "https://" + sub + region
-        try:
 
-            response = requests.get(url)
-            print(Fore.GREEN , "\nThis Bucket Found : {}".format(response.url))
-        except:
-            print(Fore.RED, "\nNot Exist Bucket : {}".format(url))
+thread1 = threading.Thread(target=sub_N_regions)
+thread2 = threading.Thread(target=sub_N_names_N_regions)
+
+thread1.start()
+thread2.start()
+
+thread1.join()
+thread2.join()
+
+print("-"*50 +"\n Finished\n")
