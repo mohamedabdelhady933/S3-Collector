@@ -3,7 +3,7 @@ import sys
 from colorama import Fore
 import threading
 
-if len(sys.argv) == 1:
+if len(sys.argv) == 1 or len(sys.argv) == 2:
     print("Usage : "+sys.argv[0]+" subdomains.txt bucket_names.txt")
 else:
 
